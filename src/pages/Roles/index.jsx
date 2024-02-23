@@ -1,88 +1,217 @@
-import { Link, Route, Routes } from "react-router-dom";
-import { RoleProvider, useRoles } from "~/contexts/RoleContext";
+import { Link, Route, Routes, useNavigate } from "react-router-dom";
+import { useRoles } from "~/contexts/RoleContext";
 import Title from "~components/Title";
 import RoleOptions from "./RoleOptions";
-import { Table, Tooltip } from "flowbite-react";
-import { FaUserMinus, FaUserPen } from "react-icons/fa6";
-import { FaUserCog } from "react-icons/fa";
+import { Badge, Button, Modal, Table, Tooltip } from "flowbite-react";
+import { FaPen, FaTrash } from "react-icons/fa6";
 import ViewRole from "./ViewRole";
+import { HiOutlineExclamationCircle } from "react-icons/hi";
+import { useServices } from "~/contexts/ServiceContext";
+import { MdOutlineRestore, MdPersonOff } from "react-icons/md";
 
 function Roles() {
   return (
-    <RoleProvider>
+    <>
       <div className="w-full flex flex-col gap-2">
         <Title>Roles Management</Title>
         <div className="flex flex-col gap-4">
           <Routes>
             <Route path="/*" element={<Main />} />
             <Route path="/:id" element={<ViewRole />} />
-            <Route path="/:id/edit" element={<>Edit Role</>} />
-            <Route path="/add" element={<>Add Role</>} />
+            <Route path="/:id/edit" element={<ViewRole />} />
+            <Route path="/add" element={<ViewRole />} />
           </Routes>
         </div>
       </div>
-    </RoleProvider>
+      <RoleModals />
+    </>
   );
 }
 
 function Main() {
-  const { results: roles } = useRoles();
-  const headers = ["role name", "role description", "actions"];
-  const tooltipOptions = {
-    placement: "left",
-    animation: "duration-500",
-    arrow: false,
+  const { results: roles, setRole, setModule } = useRoles();
+  const headers = ["role name", "role description", "status", "actions"];
+  const { tooltipOptions } = useServices();
+  return (
+    roles && (
+      <>
+        <RoleOptions />
+        <Table hoverable>
+          <Table.Head>
+            {headers.map((header, index) => (
+              <Table.HeadCell
+                key={index}
+                align="center"
+                className="text-main-300"
+              >
+                {header}
+              </Table.HeadCell>
+            ))}
+          </Table.Head>
+          <Table.Body>
+            {roles.map((role, index) => {
+              return (
+                <Table.Row key={index}>
+                  <Table.Cell className="font-semibold capitalize">
+                    {role.status !== "active" ? (
+                      <p>{role.role_name}</p>
+                    ) : (
+                      <Link to={`./${role.id}`}>{role.role_name}</Link>
+                    )}
+                  </Table.Cell>
+                  <Table.Cell className="text-xs xl:text-sm text-slate-500">
+                    {role.role_description}
+                  </Table.Cell>
+                  <Table.Cell align="center">
+                    <Badge
+                      color={role.status === "active" ? "success" : "failure"}
+                      className="w-fit uppercase"
+                    >
+                      {role.status}
+                    </Badge>
+                  </Table.Cell>
+                  <Table.Cell>
+                    <div className="flex items-center justify-evenly">
+                      {role.status !== "active" ? (
+                        <FaPen className="text-lg text-yellow-200" />
+                      ) : (
+                        <Tooltip content="Edit" {...tooltipOptions}>
+                          <Link to={`./${role.id}/edit`}>
+                            <FaPen className="text-lg text-yellow-300" />
+                          </Link>
+                        </Tooltip>
+                      )}
+                      {role.status === "active" ? (
+                        <Tooltip content="Deactivate" {...tooltipOptions}>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setRole(role);
+                              setModule("deactivate");
+                            }}
+                          >
+                            <MdPersonOff className="text-xl text-red-400" />
+                          </button>
+                        </Tooltip>
+                      ) : (
+                        <Tooltip content="Reactivate" {...tooltipOptions}>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setRole(role);
+                              setModule("reactivate");
+                            }}
+                          >
+                            <MdOutlineRestore className="text-xl text-green-400" />
+                          </button>
+                        </Tooltip>
+                      )}
+                      <Tooltip content="Delete" {...tooltipOptions}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setRole(role);
+                            setModule("delete");
+                          }}
+                        >
+                          <FaTrash className="text-gray-400" />
+                        </button>
+                      </Tooltip>
+                    </div>
+                  </Table.Cell>
+                </Table.Row>
+              );
+            })}
+          </Table.Body>
+        </Table>
+      </>
+    )
+  );
+}
+
+function RoleModals() {
+  const { role, setRole, module, updateRoleStatus, doReload } = useRoles();
+  const { setAlert } = useServices();
+  const navigate = useNavigate();
+  const handleStatusUpdate = async (status) => {
+    const response = await updateRoleStatus(role.id, status);
+    if (response?.success) {
+      setRole(null);
+      setAlert({
+        isOn: true,
+        type: "success",
+        message: `Role has been successfully ${
+          status !== "deleted"
+            ? status === "active"
+              ? "reactivated"
+              : "deactivated"
+            : "deleted"
+        }`,
+      });
+      doReload((prevState) => (prevState += 1));
+      navigate("/roles");
+    } else {
+      setAlert({
+        isOn: true,
+        type: "failure",
+        message: `An error occurred. Please try again.`,
+      });
+    }
   };
   return (
-    <>
-      <RoleOptions />
-      <Table hoverable>
-        <Table.Head>
-          {headers.map((header, index) => (
-            <Table.HeadCell
-              key={index}
-              align="center"
-              className="text-main-300"
+    <Modal
+      show={role !== null}
+      size={module !== "deactivate" ? "md" : "lg"}
+      popup
+      dismissible
+      onClose={() => setRole(null)}
+    >
+      <Modal.Header />
+      <Modal.Body>
+        <div className="text-center flex flex-col items-center gap-2 px-2">
+          <HiOutlineExclamationCircle className="h-14 w-14 text-gray-400 dark:text-gray-200" />
+          {module === "deactivate" ? (
+            <>
+              <h3 className="mb-1 text-main-500 text-center">
+                Are you sure you want to deactivate this role? There are
+                currently [X] members assigned to this role.*
+              </h3>
+              <span className="mb-4 text-red-400 dark:text-red-400 text-sm text-center">
+                *Deactivating it will restrict these users&lsquo; access unless
+                you assign them a new role.
+              </span>
+            </>
+          ) : module === "reactivate" ? (
+            <h3 className="mb-4 text-main-500 text-center">
+              Are you sure you want to reactivate this role?
+            </h3>
+          ) : (
+            <h3 className="mb-4 text-main-500 text-center">
+              Are you sure you want to delete this role?
+            </h3>
+          )}
+          <div className="flex justify-center gap-4 w-full">
+            <Button
+              color={/deactivate|delete/.test(module) ? "failure" : "success"}
+              onClick={() =>
+                handleStatusUpdate(
+                  module === "deactivate"
+                    ? "inactive"
+                    : module === "reactivate"
+                    ? "active"
+                    : "deleted"
+                )
+              }
             >
-              {header}
-            </Table.HeadCell>
-          ))}
-        </Table.Head>
-        <Table.Body>
-          {roles.map((role, index) => {
-            return (
-              <Table.Row key={index}>
-                <Table.Cell className="font-semibold capitalize">
-                  <Link to={`./${role.role_name}`}>{role.role_name}</Link>
-                </Table.Cell>
-                <Table.Cell className="text-xs xl:text-sm text-slate-500">
-                  {role.role_description}
-                </Table.Cell>
-                <Table.Cell>
-                  <div className="flex items-center justify-evenly">
-                    <Tooltip content="Permissions" {...tooltipOptions}>
-                      <Link to={`./${role.role_name}`}>
-                        <FaUserCog className="text-lg" />
-                      </Link>
-                    </Tooltip>
-                    <Tooltip content="Edit" {...tooltipOptions}>
-                      <Link to={`./${role.role_name}/edit`}>
-                        <FaUserPen className="text-lg text-yellow-300" />
-                      </Link>
-                    </Tooltip>
-                    <Tooltip content="Delete" {...tooltipOptions}>
-                      <button>
-                        <FaUserMinus className="text-lg text-red-500" />
-                      </button>
-                    </Tooltip>
-                  </div>
-                </Table.Cell>
-              </Table.Row>
-            );
-          })}
-        </Table.Body>
-      </Table>
-    </>
+              Yes, proceed
+            </Button>
+            <Button color="gray" onClick={() => setRole(null)}>
+              No, cancel
+            </Button>
+          </div>
+        </div>
+      </Modal.Body>
+    </Modal>
   );
 }
 

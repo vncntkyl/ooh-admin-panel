@@ -6,21 +6,21 @@ import useSearch from "~/hooks/useSearch";
 import axios from "axios";
 import { endpoints, headers } from "./endpoints";
 
-const RoleContext = React.createContext();
+const UserContext = React.createContext();
 
-export function useRoles() {
-  return useContext(RoleContext);
+export function useUsers() {
+  return useContext(UserContext);
 }
 
-export function RoleProvider({ children }) {
-  const [roles, setRoles] = useState();
-  const [role, setRole] = useState(null);
+export function UserProvider({ children }) {
+  const [users, setUsers] = useState();
+  const [user, setUser] = useState(null);
   const [module, setModule] = useState("");
-  const { searchTerm, results } = useSearch(roles);
+  const { searchTerm, results } = useSearch(users);
   const [reload, doReload] = useState(0);
-  const retrieveRole = async (id) => {
+  const retrieveUser = async (id) => {
     try {
-      const response = await axios.get(endpoints.roles, {
+      const response = await axios.get(endpoints.users, {
         params: {
           id: id,
         },
@@ -31,9 +31,9 @@ export function RoleProvider({ children }) {
       console.log(e);
     }
   };
-  const retrieveRoles = async () => {
+  const retrieveUsers = async () => {
     try {
-      const response = await axios.get(endpoints.roles, {
+      const response = await axios.get(endpoints.users, {
         ...headers,
       });
       return response.data;
@@ -41,9 +41,9 @@ export function RoleProvider({ children }) {
       console.log(e);
     }
   };
-  const createRole = async (data) => {
+  const createUser = async (data) => {
     try {
-      const response = await axios.post(endpoints.roles, data, {
+      const response = await axios.post(endpoints.users, data, {
         ...headers,
       });
       return response.data;
@@ -51,9 +51,9 @@ export function RoleProvider({ children }) {
       console.log(e);
     }
   };
-  const updateRole = async (id, data) => {
+  const updateUser = async (id, data) => {
     try {
-      const response = await axios.put(endpoints.roles, data, {
+      const response = await axios.put(endpoints.users, data, {
         params: {
           id: id,
         },
@@ -64,14 +64,15 @@ export function RoleProvider({ children }) {
       console.log(e);
     }
   };
-  const updateRoleStatus = async (id, status) => {
+  const updateUserStatus = async (id, key, status) => {
     try {
       const response = await axios.patch(
-        endpoints.roles,
-        { status: status },
+        endpoints.users,
+        { [key]: status },
         {
           params: {
             id: id,
+            key: key,
           },
           ...headers,
         }
@@ -82,31 +83,31 @@ export function RoleProvider({ children }) {
     }
   };
   const values = {
-    role,
-    roles,
+    user,
+    users,
     results,
     module,
-    setRole,
-    setRoles,
+    setUser,
+    setUsers,
     doReload,
     setModule,
     searchTerm,
-    createRole,
-    updateRole,
-    retrieveRole,
-    retrieveRoles,
-    updateRoleStatus,
+    createUser,
+    updateUser,
+    retrieveUser,
+    retrieveUsers,
+    updateUserStatus,
   };
 
   useEffect(() => {
     const setup = async () => {
-      const response = await retrieveRoles();
-      setRoles(response.filter((res) => res.status !== "deleted"));
+      const response = await retrieveUsers();
+      setUsers(response.filter((res) => res.status !== "deleted"));
     };
     setup();
   }, [reload]);
-  return <RoleContext.Provider value={values}>{children}</RoleContext.Provider>;
+  return <UserContext.Provider value={values}>{children}</UserContext.Provider>;
 }
-RoleProvider.propTypes = {
+UserProvider.propTypes = {
   children: PropTypes.node,
 };

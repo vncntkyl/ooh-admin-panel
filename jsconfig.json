@@ -31,6 +31,9 @@
             ],
             "~utils/*": [
                 "src/misc/*"
+            ],
+            "~Users/*": [
+                "src/pages/Users/*"
             ]
         }
     }
