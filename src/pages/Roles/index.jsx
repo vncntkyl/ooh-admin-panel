@@ -8,6 +8,7 @@ import ViewRole from "./ViewRole";
 import { HiOutlineExclamationCircle } from "react-icons/hi";
 import { useServices } from "~/contexts/ServiceContext";
 import { MdOutlineRestore, MdPersonOff } from "react-icons/md";
+import { useEffect, useState } from "react";
 
 function Roles() {
   return (
@@ -31,25 +32,49 @@ function Roles() {
 function Main() {
   const { results: roles, setRole, setModule } = useRoles();
   const headers = ["role name", "role description", "status", "actions"];
-  const { tooltipOptions } = useServices();
+  const { tooltipOptions, sortItems, sortByStatus } = useServices();
+
+  const [sortedItems, setSortedItems] = useState(null);
+  const [key, setKey] = useState("status");
+  const [direction, setDirection] = useState("ASC");
+
+  useEffect(() => {
+    if (roles) {
+      if (roles) {
+        const items = [...roles];
+
+        if (key === "status") {
+          setSortedItems(sortByStatus(items, direction));
+        } else {
+          setSortedItems(sortItems(items, key, direction));
+        }
+      }
+    }
+  }, [roles, key, direction, roles]);
   return (
-    roles && (
-      <>
-        <RoleOptions />
-        <Table hoverable>
-          <Table.Head>
-            {headers.map((header, index) => (
-              <Table.HeadCell
-                key={index}
-                align="center"
-                className="text-main-300"
-              >
-                {header}
-              </Table.HeadCell>
-            ))}
-          </Table.Head>
-          <Table.Body>
-            {roles.map((role, index) => {
+    <>
+      <RoleOptions
+        role_key={key}
+        setKey={setKey}
+        direction={direction}
+        setDirection={setDirection}
+      />
+      <Table hoverable>
+        <Table.Head>
+          {headers.map((header, index) => (
+            <Table.HeadCell
+              key={index}
+              align="center"
+              className="text-main-300"
+            >
+              {header}
+            </Table.HeadCell>
+          ))}
+        </Table.Head>
+        <Table.Body>
+          {sortedItems &&
+            sortedItems?.length !== 0 &&
+            sortedItems.map((role, index) => {
               return (
                 <Table.Row key={index}>
                   <Table.Cell className="font-semibold capitalize">
@@ -122,10 +147,9 @@ function Main() {
                 </Table.Row>
               );
             })}
-          </Table.Body>
-        </Table>
-      </>
-    )
+        </Table.Body>
+      </Table>
+    </>
   );
 }
 
