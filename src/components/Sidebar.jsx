@@ -5,53 +5,54 @@ import classNames from "classnames";
 import { useFunction } from "~/misc/functions";
 import { useServices } from "~/contexts/ServiceContext";
 
+//sidebar main component
 function Sidebar() {
+  const { toSpaced } = useFunction();
+  const { CheckPermission, isViewable } = useServices();
+  const location = useLocation();
+
   return (
     <section className="sticky top-[6.5rem] left-0 p-2 pt-1 min-w-[250px] h-fit rounded-md bg-default-100">
-      <SidebarItems />
+      <div className="flex flex-col gap-2">
+        {/* map links object */}
+        {Object.keys(testLinks).map((head) => {
+          return (
+            <>
+              {/* check if the link is viewable for user role */}
+              {isViewable(testLinks[head].map((link) => link.title)) && (
+                <p className="uppercase text-sm font-bold text-main-300">
+                  {toSpaced(head)}
+                </p>
+              )}
+              {testLinks[head].map((item) => {
+                //dashboard will always show
+                return item.title === "dashboard" ? (
+                  <SidebarItem
+                    key={item.title}
+                    {...item}
+                    isActive={item.link === "" && location.pathname === "/"}
+                    isStart
+                  />
+                ) : (
+                  // check permission of user if the link should be shown or not
+                  <CheckPermission path={item.title}>
+                    <SidebarItem
+                      key={item.title}
+                      {...item}
+                      isActive={location.pathname.includes(item.link)}
+                    />
+                  </CheckPermission>
+                );
+              })}
+            </>
+          );
+        })}
+      </div>
     </section>
   );
 }
 
-function SidebarItems() {
-  const { toSpaced } = useFunction();
-  const { CheckPermission, isViewable } = useServices();
-  const location = useLocation();
-  return (
-    <div className="flex flex-col gap-2">
-      {Object.keys(testLinks).map((head) => {
-        return (
-          <>
-            {isViewable(testLinks[head].map((link) => link.title)) && (
-              <p className="uppercase text-sm font-bold text-main-300">
-                {toSpaced(head)}
-              </p>
-            )}
-            {testLinks[head].map((item) => {
-              return item.title === "dashboard" ? (
-                <SidebarItem
-                  key={item.title}
-                  {...item}
-                  isActive={item.link === "" && location.pathname === "/"}
-                  isStart
-                />
-              ) : (
-                <CheckPermission path={item.title}>
-                  <SidebarItem
-                    key={item.title}
-                    {...item}
-                    isActive={location.pathname.includes(item.link)}
-                  />
-                </CheckPermission>
-              );
-            })}
-          </>
-        );
-      })}
-    </div>
-  );
-}
-
+//component for sidebar items
 function SidebarItem({ title, icon: Icon, link, isActive, isStart }) {
   return (
     <Link

@@ -1,30 +1,31 @@
 import Cookies from "js-cookie";
-
-import Navbar from "./components/Navbar";
-import Sidebar from "~components/Sidebar";
-import { Route, BrowserRouter as Router, Routes } from "react-router-dom";
-import Roles from "~pages/Roles";
-import { ServiceProvider, useServices } from "./contexts/ServiceContext";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Alert } from "flowbite-react";
 import { RiInformationFill } from "react-icons/ri";
-import Users from "~pages/Users";
-import { RoleProvider, useRoles } from "./contexts/RoleContext";
-import { UserProvider } from "./contexts/UserContext";
-import Error from "~pages/Error";
+import { Route, BrowserRouter as Router, Routes } from "react-router-dom";
 
+//custom components
+import Roles from "~pages/Roles";
+import Users from "~pages/Users";
+import Navbar from "~components/Navbar";
+import Sidebar from "~components/Sidebar";
+import { alertTemplate } from "./misc/templates";
+import { RoleProvider } from "~contexts/RoleContext";
+import { UserProvider } from "~contexts/UserContext";
+import { ServiceProvider, useServices } from "~contexts/ServiceContext";
+
+//Main App Component
 function App() {
+  //check if the system has user and role stored in cookies
   const isAuthenticated = Cookies.get("user");
   const roleCookie = Cookies.get("role");
+
+  //check if the user has admin permissions
   const isAuthorized = JSON.parse(roleCookie).permissions.admin.access;
   const loginPage = "http://localhost:5173/";
 
-  if (!isAuthenticated) {
-    window.location.href = loginPage;
-    return null;
-  }
-
-  if (!isAuthorized) {
+  //return to login page if user is neither authenticated nor authorized
+  if (!isAuthenticated || !isAuthorized) {
     window.location.href = loginPage;
     return null;
   }
@@ -49,11 +50,15 @@ function App() {
   );
 }
 
+//component for rendering the routes of the system
 function AppRoutes() {
+  //service function initialization
   const { CheckPermission } = useServices();
   return (
     <Routes>
       <Route exact path="/" element={<>Dashboard</>} />
+
+      {/* mapping of pages for dynamic routing based on the user's permissions */}
       {["sites", "analytics", "roles", "users"].map((route) => {
         let Component;
         switch (route) {
@@ -78,11 +83,11 @@ function AppRoutes() {
           children: <Route path={`/${route}/*`} element={element} />,
         });
       })}
-      {/* <Route path="*" element={<Error />} /> */}
     </Routes>
   );
 }
 
+//component for system alerts
 function AlertContainer() {
   const { alert, setAlert } = useServices();
 
@@ -90,11 +95,7 @@ function AlertContainer() {
   useEffect(() => {
     if (alert.isOn) {
       setTimeout(() => {
-        setAlert({
-          isOn: false,
-          type: "info",
-          message: "",
-        });
+        setAlert(alertTemplate);
       }, 3000);
     }
   }, [alert, setAlert]);
@@ -104,13 +105,7 @@ function AlertContainer() {
       <Alert
         icon={RiInformationFill}
         color={alert.type}
-        onDismiss={() =>
-          setAlert({
-            isOn: false,
-            type: "info",
-            message: "",
-          })
-        }
+        onDismiss={() => setAlert(alertTemplate)}
         className="absolute top-[10%] left-[50%] translate-x-[-50%] animate-fade-fr-t z-10"
       >
         <span>

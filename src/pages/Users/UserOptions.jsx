@@ -13,7 +13,6 @@ function UserOptions({ user_key, setKey, direction, setDirection }) {
     "username",
     "email_address",
     "role",
-    "status",
   ];
   const { searchTerm } = useUsers();
   const { capitalize } = useFunction();
@@ -23,6 +22,7 @@ function UserOptions({ user_key, setKey, direction, setDirection }) {
         type="search"
         placeholder="Search"
         className="min-w-[300px]"
+        //copy default theme and new configuration
         theme={{
           ...defaultTextTheme,
           field: { input: { withAddon: { off: "rounded-lg" } } },
@@ -33,34 +33,40 @@ function UserOptions({ user_key, setKey, direction, setDirection }) {
       />
       <Dropdown color="light" label={`Sort by: ${capitalize(user_key, "_")}`}>
         {headers.map((header) => (
+          //loop to map out the the headers for dropdown options
           <Dropdown.Item key={header} onClick={() => setKey(header)}>
             {capitalize(header, "_")}
           </Dropdown.Item>
         ))}
       </Dropdown>
-      <div className="flex">
-        {[
-          { to: "ASC", label: "Ascending", Icon: FaArrowUpLong },
-          { to: "DESC", label: "Descending", Icon: FaArrowDownLong },
-        ].map((dir) => {
-          const { to, label, Icon } = dir;
 
-          return (
-            <Tooltip content={label} key={dir.to} arrow={false}>
-              <button
-                className={classNames(
-                  "transition-all",
-                  direction === to ? "text-main text-xl" : "text-gray-400"
-                )}
-                onClick={() => setDirection(to)}
-              >
-                <Icon />
-              </button>
-            </Tooltip>
-          );
-        })}
+      <div className="flex">
+        {
+          //loop the ascending and descending button toggle
+          [
+            { to: "ASC", label: "Ascending", Icon: FaArrowUpLong },
+            { to: "DESC", label: "Descending", Icon: FaArrowDownLong },
+          ].map((dir) => {
+            const { to, label, Icon } = dir;
+
+            return (
+              <Tooltip content={label} key={dir.to} arrow={false}>
+                <button
+                  className={classNames(
+                    "transition-all",
+                    direction === to ? "text-main text-xl" : "text-gray-400"
+                  )}
+                  onClick={() => setDirection(to)}
+                >
+                  <Icon />
+                </button>
+              </Tooltip>
+            );
+          })
+        }
       </div>
- 
+
+      {/* Add user button */}
       <Button
         as={Link}
         to="./add"

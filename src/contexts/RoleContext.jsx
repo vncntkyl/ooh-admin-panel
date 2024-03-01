@@ -18,6 +18,8 @@ export function RoleProvider({ children }) {
   const [module, setModule] = useState("");
   const { searchTerm, results } = useSearch(roles);
   const [reload, doReload] = useState(0);
+
+  // Retrieve a specific role by ID
   const retrieveRole = async (id) => {
     try {
       const response = await axios.get(endpoints.roles, {
@@ -31,6 +33,8 @@ export function RoleProvider({ children }) {
       console.log(e);
     }
   };
+
+  // Retrieve all roles
   const retrieveRoles = async () => {
     try {
       const response = await axios.get(endpoints.roles, {
@@ -41,6 +45,8 @@ export function RoleProvider({ children }) {
       console.log(e);
     }
   };
+
+  // Create a new role
   const createRole = async (data) => {
     try {
       const response = await axios.post(endpoints.roles, data, {
@@ -51,6 +57,8 @@ export function RoleProvider({ children }) {
       console.log(e);
     }
   };
+
+  // Update a role by ID
   const updateRole = async (id, data) => {
     try {
       const response = await axios.put(endpoints.roles, data, {
@@ -64,6 +72,8 @@ export function RoleProvider({ children }) {
       console.log(e);
     }
   };
+
+  // Update the status of a role by ID
   const updateRoleStatus = async (id, status) => {
     try {
       const response = await axios.patch(
@@ -81,6 +91,7 @@ export function RoleProvider({ children }) {
       console.log(e);
     }
   };
+
   const values = {
     role,
     roles,
@@ -105,8 +116,10 @@ export function RoleProvider({ children }) {
     };
     setup();
   }, [reload]);
+
   return <RoleContext.Provider value={values}>{children}</RoleContext.Provider>;
 }
+
 RoleProvider.propTypes = {
   children: PropTypes.node,
 };

@@ -60,3 +60,9 @@ export const userTemplate = {
   role: "",
   status: "active",
 };
+
+export const alertTemplate = {
+  isOn: false,
+  type: "info",
+  message: "",
+};

@@ -6,6 +6,7 @@ function NavigateBack({ to }) {
   const location = useLocation();
 
   const goBack = () => {
+    //regex testing if the url has edit in it
     const isEditing = /edit/.test(location.pathname);
     if (isEditing) {
       navigate(-1); // Navigates back to the previous location

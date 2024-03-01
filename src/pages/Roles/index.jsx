@@ -1,21 +1,32 @@
+import { useEffect, useState } from "react";
+import { FaPen, FaTrash } from "react-icons/fa6";
+import { HiOutlineExclamationCircle } from "react-icons/hi";
+import { MdOutlineRestore, MdPersonOff } from "react-icons/md";
 import { Link, Route, Routes, useNavigate } from "react-router-dom";
-import { useRoles } from "~/contexts/RoleContext";
+import {
+  Badge,
+  Button,
+  Modal,
+  Pagination,
+  Table,
+  Tooltip,
+} from "flowbite-react";
+
+//custom components
+import ViewRole from "./ViewRole";
 import Title from "~components/Title";
 import RoleOptions from "./RoleOptions";
-import { Badge, Button, Modal, Table, Tooltip } from "flowbite-react";
-import { FaPen, FaTrash } from "react-icons/fa6";
-import ViewRole from "./ViewRole";
-import { HiOutlineExclamationCircle } from "react-icons/hi";
+import { useRoles } from "~/contexts/RoleContext";
 import { useServices } from "~/contexts/ServiceContext";
-import { MdOutlineRestore, MdPersonOff } from "react-icons/md";
-import { useEffect, useState } from "react";
 
+//main Roles Component
 function Roles() {
   return (
     <>
       <div className="w-full flex flex-col gap-2">
         <Title>Roles Management</Title>
         <div className="flex flex-col gap-4">
+          {/* All routings for Roles Page */}
           <Routes>
             <Route path="/*" element={<Main />} />
             <Route path="/:id" element={<ViewRole />} />
@@ -29,36 +40,37 @@ function Roles() {
   );
 }
 
+//Main roles content component
 function Main() {
+  //initialization and fetching of variables from custom contexts
   const { results: roles, setRole, setModule } = useRoles();
-  const headers = ["role name", "role description", "status", "actions"];
   const { tooltipOptions, sortItems, sortByStatus } = useServices();
 
   const [sortedItems, setSortedItems] = useState(null);
-  const [key, setKey] = useState("status");
-  const [direction, setDirection] = useState("ASC");
+  const [itemCount, setCount] = useState(1);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
+  // Calculate start and end index
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const onPageChange = (page) => setCurrentPage(page);
+
+  const headers = ["role name", "role description", "status", "actions"];
 
   useEffect(() => {
     if (roles) {
-      if (roles) {
-        const items = [...roles];
-
-        if (key === "status") {
-          setSortedItems(sortByStatus(items, direction));
-        } else {
-          setSortedItems(sortItems(items, key, direction));
-        }
-      }
+      const items = [...roles];
+      const alphabetical = sortItems(items, "role_name", "ASC");
+      setCount(alphabetical.length);
+      setSortedItems(
+        sortByStatus(alphabetical, "ASC").slice(startIndex, endIndex)
+      );
     }
-  }, [roles, key, direction, roles]);
+  }, [endIndex, roles, sortByStatus, sortItems, startIndex]);
   return (
     <>
-      <RoleOptions
-        role_key={key}
-        setKey={setKey}
-        direction={direction}
-        setDirection={setDirection}
-      />
+      <RoleOptions />
       <Table hoverable>
         <Table.Head>
           {headers.map((header, index) => (
@@ -75,9 +87,11 @@ function Main() {
           {sortedItems &&
             sortedItems?.length !== 0 &&
             sortedItems.map((role, index) => {
+              //if sortedItems have items, map it
               return (
                 <Table.Row key={index}>
                   <Table.Cell className="font-semibold capitalize">
+                    {/* if role is active provide a link or else just show it in text */}
                     {role.status !== "active" ? (
                       <p>{role.role_name}</p>
                     ) : (
@@ -149,14 +163,25 @@ function Main() {
             })}
         </Table.Body>
       </Table>
+      {itemCount > itemsPerPage && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={Math.ceil(itemCount / itemsPerPage)}
+          onPageChange={onPageChange}
+        />
+      )}
     </>
   );
 }
 
+//component for rendering modals of Role page
 function RoleModals() {
+  //initialize custom functions and variables
   const { role, setRole, module, updateRoleStatus, doReload } = useRoles();
   const { setAlert } = useServices();
   const navigate = useNavigate();
+
+  //function for handling status update, passes the data to backend to process it
   const handleStatusUpdate = async (status) => {
     const response = await updateRoleStatus(role.id, status);
     if (response?.success) {
@@ -194,6 +219,7 @@ function RoleModals() {
       <Modal.Body>
         <div className="text-center flex flex-col items-center gap-2 px-2">
           <HiOutlineExclamationCircle className="h-14 w-14 text-gray-400 dark:text-gray-200" />
+          {/* show different contents based on the module variable */}
           {module === "deactivate" ? (
             <>
               <h3 className="mb-1 text-main-500 text-center">

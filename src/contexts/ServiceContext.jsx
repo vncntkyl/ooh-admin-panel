@@ -2,18 +2,24 @@ import React, { useContext, useState } from "react";
 import PropTypes from "prop-types";
 import Cookies from "js-cookie";
 
+// Create a context for services
 const ServiceContext = React.createContext();
 
+// Custom hook to access services from the context
 export function useServices() {
   return useContext(ServiceContext);
 }
 
+// Service provider component
 export function ServiceProvider({ children }) {
+  // State for alert
   const [alert, setAlert] = useState({
     isOn: false,
     type: "info",
     message: "Sample only",
   });
+
+  // Array of conjunction words
   const conjunctionWords = [
     "and",
     "but",
@@ -34,8 +40,14 @@ export function ServiceProvider({ children }) {
     "in",
     "of",
   ];
+
+  // Get role from cookies
   const role = JSON.parse(Cookies.get("role"));
+
+  // Get permissions from role
   const permissions = role.permissions.admin.modules;
+
+  // Function to capitalize text
   const capitalize = (text = "", sep = " ") => {
     const tempText = text.split(sep);
     tempText.forEach((text, index) => {
@@ -45,27 +57,37 @@ export function ServiceProvider({ children }) {
     });
     return tempText.join(" ");
   };
+
+  // Function to split text
   const split = (text) => {
     return text.split(" ").join("_");
   };
+
+  // Function to join text
   const join = (text, sep = " ") => {
     return text.split("_").join(sep);
   };
+
+  // Tooltip options
   const tooltipOptions = {
     placement: "top",
     animation: "duration-500",
     arrow: false,
   };
 
+  // Component to check permission
   function CheckPermission({ path, children }) {
     return permissions && permissions[path].view && <>{children}</>;
   }
 
+  // Function to check if any link is viewable
   function isViewable(array) {
     return array.some((link) => {
       return permissions[link]?.view;
     });
   }
+
+  // Function to sort items
   function sortItems(array, key, direction) {
     return array.sort((a, b) => {
       if (direction === "ASC") {
@@ -75,6 +97,8 @@ export function ServiceProvider({ children }) {
       }
     });
   }
+
+  // Function to sort by status
   function sortByStatus(array, direction) {
     return array.sort((a, b) => {
       if (a.status === "active" && b.status === "inactive") {
@@ -87,6 +111,7 @@ export function ServiceProvider({ children }) {
     });
   }
 
+  // Function to sort by role
   function sortByRole(array, roles, direction) {
     return array.sort((a, b) => {
       const a_role = roles?.find((role) => role.id === a.role)?.role_name;
@@ -97,6 +122,7 @@ export function ServiceProvider({ children }) {
     });
   }
 
+  // Values to be provided by the context
   const values = {
     alert,
     setAlert,
@@ -110,10 +136,14 @@ export function ServiceProvider({ children }) {
     sortByStatus,
     sortByRole,
   };
+
+  // Provide the values to the children components
   return (
     <ServiceContext.Provider value={values}>{children}</ServiceContext.Provider>
   );
 }
+
+// PropTypes for ServiceProvider component
 ServiceProvider.propTypes = {
   path: PropTypes.string,
   children: PropTypes.node,

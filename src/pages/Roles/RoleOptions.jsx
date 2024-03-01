@@ -1,56 +1,27 @@
-import { Button, Dropdown, TextInput, Tooltip } from "flowbite-react";
-import { defaultTextTheme, mainButtonTheme } from "~/misc/themes";
-import { useRoles } from "~/contexts/RoleContext";
 import { Link } from "react-router-dom";
-import { useFunction } from "~/misc/functions";
-import { FaArrowDownLong, FaArrowUpLong } from "react-icons/fa6";
-import PropTypes from "prop-types";
-import classNames from "classnames";
+import { Button, TextInput } from "flowbite-react";
+import { useRoles } from "~/contexts/RoleContext";
+import { defaultTextTheme, mainButtonTheme } from "~/misc/themes";
 
-function RoleOptions({ role_key, setKey, direction, setDirection }) {
-  const headers = ["role_name", "status"];
+//component for role options
+function RoleOptions() {
   const { searchTerm } = useRoles();
-  const { capitalize } = useFunction();
   return (
-    <div className="w-full flex items-center gap-4">
+    <div className="w-full flex items-center justify-between gap-4">
+    {/* SEARCH FUNCTION */}
       <TextInput
         type="search"
         placeholder="Search"
         className="min-w-[300px]"
-        theme={defaultTextTheme}
+        theme={{
+          ...defaultTextTheme,
+          field: { input: { withAddon: { off: "rounded-lg" } } },
+        }}
         onChange={(e) => {
           searchTerm(e.target.value);
         }}
       />
-      <Dropdown color="light" label={`Sort by: ${capitalize(role_key, "_")}`}>
-        {headers.map((header) => (
-          <Dropdown.Item key={header} onClick={() => setKey(header)}>
-            {capitalize(header, "_")}
-          </Dropdown.Item>
-        ))}
-      </Dropdown>
-      <div className="flex">
-        {[
-          { to: "ASC", label: "Ascending", Icon: FaArrowUpLong },
-          { to: "DESC", label: "Descending", Icon: FaArrowDownLong },
-        ].map((dir) => {
-          const { to, label, Icon } = dir;
-
-          return (
-            <Tooltip content={label} key={dir.to} arrow={false}>
-              <button
-                className={classNames(
-                  "transition-all",
-                  direction === to ? "text-main text-xl" : "text-gray-400"
-                )}
-                onClick={() => setDirection(to)}
-              >
-                <Icon />
-              </button>
-            </Tooltip>
-          );
-        })}
-      </div>
+      {/* ADD ROLE BUTTON */}
       <Button
         as={Link}
         to="./add"
@@ -63,11 +34,5 @@ function RoleOptions({ role_key, setKey, direction, setDirection }) {
     </div>
   );
 }
-RoleOptions.propTypes = {
-  role_key: PropTypes.string,
-  setKey: PropTypes.func,
-  direction: PropTypes.string,
-  setDirection: PropTypes.func,
-};
 
 export default RoleOptions;

@@ -1,15 +1,19 @@
 import Cookies from "js-cookie";
+import { Link } from "react-router-dom";
 import { Avatar, Dropdown } from "flowbite-react";
 
 import logo from "~assets/scmi.png";
-import { Link } from "react-router-dom";
+
 function Navbar() {
   const user = JSON.parse(Cookies.get("user"));
+
+  //getting user initials for the user icon
   const getInitials = () => {
     const { first_name, last_name } = user;
     return first_name.substring(0, 1) + last_name.substring(0, 1);
   };
 
+  //logout function
   const handleLogout = () => {
     Cookies.remove("user");
     window.location.href = "http://localhost:5173";

@@ -55,7 +55,6 @@ function UserInformation() {
     const tempUser = { ...user };
     tempUser.status = "active";
     const response = await createUser(tempUser);
-    console.log(response);
     if (response?.user_id) {
       setAlert({
         isOn: true,
@@ -188,6 +187,7 @@ function UserInformation() {
     )
   );
 }
+export default UserInformation;
 
 const FormGroup = ({ isEditable, user, item, onChange }) => {
   const { capitalize } = useFunction();
@@ -210,5 +210,3 @@ const FormGroup = ({ isEditable, user, item, onChange }) => {
     </div>
   );
 };
-
-export default UserInformation;

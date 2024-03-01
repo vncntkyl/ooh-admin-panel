@@ -7,6 +7,7 @@ import {
   Button,
   Label,
   Modal,
+  Pagination,
   Select,
   Table,
   Tooltip,
@@ -60,22 +61,37 @@ function Main() {
   const [sortedItems, setSortedItems] = useState(null);
   const [key, setKey] = useState("first_name");
   const [direction, setDirection] = useState("ASC");
+  const [itemCount, setCount] = useState(1);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
+  // Calculate start and end index
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const onPageChange = (page) => setCurrentPage(page);
 
   useEffect(() => {
     if (users) {
       if (roles) {
         const items = [...users];
-
-        if (key === "status") {
-          setSortedItems(sortByStatus(items, direction));
-        } else if (key === "role") {
-          setSortedItems(sortByRole(items, roles, direction));
+        let sortedItems = items;
+        setCount(items.length);
+        if (key === "role") {
+          sortedItems = sortByStatus(
+            sortByRole(items, roles, direction),
+            direction
+          );
         } else {
-          setSortedItems(sortItems(items, key, direction));
+          sortedItems = sortByStatus(
+            sortItems(items, key, direction),
+            direction
+          );
         }
+
+        setSortedItems(sortedItems.slice(startIndex, endIndex));
       }
     }
-  }, [users, key, direction, roles]);
+  }, [users, key, direction, roles, startIndex, endIndex, sortByStatus, sortByRole, sortItems]);
   return (
     <>
       <UserOptions
@@ -207,6 +223,13 @@ function Main() {
           )}
         </Table.Body>
       </Table>
+      {itemCount > itemsPerPage && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={Math.ceil(itemCount / itemsPerPage)}
+          onPageChange={onPageChange}
+        />
+      )}
     </>
   );
 }
