@@ -15,8 +15,13 @@ function Navbar() {
 
   //logout function
   const handleLogout = () => {
-    Cookies.remove("user");
-    window.location.href = "http://localhost:5173";
+    Cookies.remove("user", {
+      domain: ".scmiph.com",
+    });
+    Cookies.remove("role", {
+      domain: ".scmiph.com",
+    });
+    window.location.href = "https://ooh.scmiph.com/login";
   };
   function DropdownLabel() {
     return (
@@ -35,7 +40,7 @@ function Navbar() {
           className="w-full max-w-[200px]"
         />
         <Link
-          to="http://localhost:5173/"
+          to="https://ooh.scmiph.com/"
           className="ml-auto border p-2.5 px-4 rounded-full hover:border-slate-100 hover:shadow hover:text-secondary transition-all duration-300"
         >
           Data Platform

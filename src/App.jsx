@@ -21,8 +21,10 @@ function App() {
   const roleCookie = Cookies.get("role");
 
   //check if the user has admin permissions
-  const isAuthorized = JSON.parse(roleCookie).permissions.admin.access;
-  const loginPage = "http://localhost:5173/";
+  const isAuthorized = roleCookie
+    ? JSON.parse(roleCookie).permissions.admin.access
+    : null;
+  const loginPage = "https://ooh.scmiph.com/";
 
   //return to login page if user is neither authenticated nor authorized
   if (!isAuthenticated || !isAuthorized) {
