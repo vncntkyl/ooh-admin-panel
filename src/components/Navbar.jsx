@@ -6,6 +6,8 @@ import logo from "~assets/scmi.png";
 
 function Navbar() {
   const user = JSON.parse(Cookies.get("user"));
+  const domain =
+    window.location.hostname == "localhost" ? "localhost" : ".scmiph.com";
 
   //getting user initials for the user icon
   const getInitials = () => {
@@ -16,10 +18,13 @@ function Navbar() {
   //logout function
   const handleLogout = () => {
     Cookies.remove("user", {
-      domain: ".scmiph.com",
+      domain: domain,
     });
     Cookies.remove("role", {
-      domain: ".scmiph.com",
+      domain: domain,
+    });
+    Cookies.remove("token", {
+      domain: domain,
     });
     window.location.href = "https://ooh.scmiph.com/login";
   };
