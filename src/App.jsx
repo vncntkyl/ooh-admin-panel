@@ -13,18 +13,25 @@ import { alertTemplate } from "./misc/templates";
 import { RoleProvider } from "~contexts/RoleContext";
 import { UserProvider } from "~contexts/UserContext";
 import { ServiceProvider, useServices } from "~contexts/ServiceContext";
+import Sites from "~pages/Sites";
+import { SiteProvider } from "./contexts/SiteContext";
 
 //Main App Component
 function App() {
   //check if the system has user and role stored in cookies
   const isAuthenticated = Cookies.get("user");
   const roleCookie = Cookies.get("role");
-
+  let isAuthorized = false;
   //check if the user has admin permissions
-  const isAuthorized = roleCookie
-    ? JSON.parse(roleCookie).permissions.admin.access
-    : null;
-  const loginPage = "https://ooh.scmiph.com/";
+  if (roleCookie) {
+    if (roleCookie !== "undefined") {
+      isAuthorized = JSON.parse(roleCookie).permissions.admin.access;
+    }
+  }
+  const loginPage =
+    window.location.hostname === "localhost"
+      ? "localhost:5173/login"
+      : "https://ooh.scmiph.com/";
 
   //return to login page if user is neither authenticated nor authorized
   if (!isAuthenticated || !isAuthorized) {
@@ -36,16 +43,18 @@ function App() {
     <div className="relative min-h-screen">
       <RoleProvider>
         <UserProvider>
-          <ServiceProvider>
-            <Router>
-              <AlertContainer />
-              <Navbar />
-              <main className="flex flex-row gap-4 p-4">
-                <Sidebar />
-                <AppRoutes />
-              </main>
-            </Router>
-          </ServiceProvider>
+          <SiteProvider>
+            <ServiceProvider>
+              <Router>
+                <AlertContainer />
+                <Navbar />
+                <main className="flex flex-row gap-4 p-4">
+                  <Sidebar />
+                  <AppRoutes />
+                </main>
+              </Router>
+            </ServiceProvider>
+          </SiteProvider>
         </UserProvider>
       </RoleProvider>
     </div>
@@ -65,7 +74,7 @@ function AppRoutes() {
         let Component;
         switch (route) {
           case "sites":
-            Component = null;
+            Component = Sites;
             break;
           case "analytics":
             Component = null;

@@ -34,6 +34,9 @@
             ],
             "~Users/*": [
                 "src/pages/Users/*"
+            ],
+            "~Sites/*": [
+                "src/pages/Sites/*"
             ]
         }
     }
