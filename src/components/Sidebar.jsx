@@ -12,7 +12,7 @@ function Sidebar() {
   const location = useLocation();
 
   return (
-    <section className="sticky top-[6.5rem] left-0 p-2 pt-1 min-w-[250px] h-fit rounded-md bg-default-100">
+    <section className="p-2 pt-1 min-w-[250px] h-fit rounded-md bg-default-100">
       <div className="flex flex-col gap-2">
         {/* map links object */}
         {Object.keys(testLinks).map((head) => {

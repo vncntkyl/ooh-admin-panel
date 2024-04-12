@@ -37,7 +37,7 @@ function Navbar() {
     );
   }
   return (
-    <header className="w-full bg-white shadow sticky top-0 z-[1]">
+    <header className="w-full bg-white shadow sticky top-0 z-[3]">
       <div className="flex items-center p-4 gap-8 justify-between">
         <img
           src={logo}
