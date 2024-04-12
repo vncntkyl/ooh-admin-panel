@@ -12,4 +12,5 @@ export const endpoints = {
   roles: server + "/user/roles",
   users: server + "/user",
   sites: server + "/dashboard/sites",
+  batch: server + "/dashboard/batch",
 };

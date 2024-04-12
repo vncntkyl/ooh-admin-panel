@@ -1,15 +1,20 @@
 /* eslint-disable react/prop-types */
-import { FileInput, Label, TextInput } from "flowbite-react";
+import { Button, FileInput, Label, Select, TextInput } from "flowbite-react";
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useSites } from "~/contexts/SiteContext";
 import { useFunction } from "~/misc/functions";
 import Title from "~components/Title";
 import MapPicker from "./MapPicker";
+import { mainButtonTheme } from "~/misc/themes";
+import { useServices } from "~/contexts/ServiceContext";
+import { format } from "date-fns";
 
 function SiteInformation() {
   const { id } = useParams();
-  const { retrieveSite } = useSites();
+  const { retrieveSite, insertSite, updateSite, doReload, reload } = useSites();
+  const { setAlert } = useServices();
+
   const [site, setSite] = useState();
   const [dimensions, setDimensions] = useState({
     length: "",
@@ -17,16 +22,12 @@ function SiteInformation() {
   });
   const [address, setAddress] = useState("");
   const [file, setFile] = useState(null);
+  const [unit, setUnit] = useState("");
   const [center, setCenter] = useState(null);
+  const navigate = useNavigate();
+
   const isEditable = /edit|add/.test(window.location.pathname);
-  const details = [
-    "segments",
-    "type",
-    "price",
-    "board_facing",
-    "facing",
-    "access_type",
-  ];
+  const details = ["segments", "type", "price", "board_facing"];
   const location = ["area", "city", "region"];
 
   const handleChange = (e) => {
@@ -50,32 +51,110 @@ function SiteInformation() {
     };
     reader.readAsDataURL(evt.target.files[0]);
   };
+  const handleMapChange = (lat, lng) => {
+    setSite((prev) => {
+      return {
+        ...prev,
+        latitude: lat,
+        longitude: lng,
+      };
+    });
+  };
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const data = {
+      ...site,
+      size: `${dimensions.length}${unit} x ${dimensions.width}${unit}`,
+    };
+
+    data.site_code = format(new Date(), "MMMMMddyyHms");
+    data.site_name = data.name;
+    data.long = data.longitude;
+    data.lat = data.latitude;
+    data.imageURL =
+      "https://img.freepik.com/free-psd/blank-billboard-mockup_53876-12218.jpg";
+    delete data.name;
+    delete data.longitude;
+    delete data.latitude;
+    const response = await insertSite(data);
+    console.log(response);
+    if (response?.success) {
+      setAlert({
+        isOn: true,
+        type: "success",
+        message: "Created a new site successfully.",
+      });
+      doReload((prevState) => (prevState += 1));
+
+      navigate(`/sites`);
+    }
+  };
+  const handleUpdate = async (e) => {
+    e.preventDefault();
+    const data = {
+      ...site,
+      size: `${dimensions.length}${unit} x ${dimensions.width}${unit}`,
+    };
+
+    data.site_name = data.name;
+    data.long = data.longitude;
+    data.lat = data.latitude;
+    delete data.name;
+    delete data.longitude;
+    delete data.latitude;
+    delete data.facing;
+    delete data.access_type;
+    console.log(data);
+    const response = await updateSite(data);
+    console.log(response);
+
+    if (response?.success) {
+      setAlert({
+        isOn: true,
+        type: "success",
+        message: "Site information updated successfully",
+      });
+      doReload((prevState) => (prevState += 1));
+
+      navigate(`/sites`);
+    }
+  };
+
   useEffect(() => {
     const setup = async () => {
       if (id) {
         const response = await retrieveSite(id);
         setSite(response);
         let dimensions = response.size;
+        let units = response.size;
         dimensions = dimensions.match(/\d+/g);
+        console.log(dimensions);
         setDimensions({
           length: dimensions[0],
           width: dimensions[1],
         });
+        setUnit(
+          units
+            .split(/\s+/)[0]
+            .match(/[a-zA-Z]/g)
+            .join("")
+        );
         setCenter({
           lat: parseFloat(response.latitude),
           lng: parseFloat(response.longitude),
         });
       } else {
         setSite({
+          site_code: "",
           name: "",
           site_owner: "",
           size: "",
           segments: "",
           type: "",
           price: "",
-          board_facing: "N/A",
-          facing: "N/A",
-          access_type: "N/A",
+          board_facing: "",
+          facing: "",
+          access_type: "public",
           imageURL: null,
           area: "",
           city: "",
@@ -87,12 +166,19 @@ function SiteInformation() {
       }
     };
     setup();
-  }, [id]);
+  }, [id, retrieveSite, reload]);
   return (
     site && (
-      <div className="bg-white p-4 px-8 flex flex-col gap-4 shadow-lg">
-        <Title>{site.name}</Title>
-        <form className="flex flex-col gap-4" encType="multipart/form-data">
+      <div className="bg-white p-6 flex flex-col gap-4 shadow-lg">
+        <Link to={`/sites`} className="underline">
+          &#60; Back to sites
+        </Link>
+        {!isEditable && <Title>{site.name}</Title>}
+        <form
+          className="flex flex-col gap-4"
+          encType="multipart/form-data"
+          onSubmit={id ? handleUpdate : handleSubmit}
+        >
           <div className="flex flex-col gap-1">
             {site.imageURL && (
               <img src={site.imageURL} alt="" className="w-full xl:w-1/3" />
@@ -105,20 +191,19 @@ function SiteInformation() {
             )}
           </div>
           <p className="font-bold uppercase">Basic Information</p>
-          <div className="grid grid-cols-2 grid-rows-5 grid-flow-col gap-4">
-            <FormGroup
-              isEditable={isEditable}
-              site={site}
-              item="name"
-              onChange={handleChange}
-            />
-            <FormGroup
-              isEditable={isEditable}
-              site={site}
-              item="site_owner"
-              onChange={handleChange}
-            />
-            <MultiFieldFormGroup
+          <div className="grid grid-cols-2 grid-rows-4 grid-flow-col gap-4">
+            {["name", "site_owner"].map((detail) => {
+              return (
+                <FormGroup
+                  key={detail}
+                  isEditable={isEditable}
+                  site={site}
+                  item={detail}
+                  onChange={handleChange}
+                />
+              );
+            })}
+            {/* <MultiFieldFormGroup
               isEditable={isEditable}
               site={dimensions}
               items={["length", "width"]}
@@ -131,7 +216,80 @@ function SiteInformation() {
                   };
                 });
               }}
-            />
+            /> */}
+            <div className="flex items-center gap-4">
+              <Label className="whitespace-nowrap w-1/4">Size</Label>
+              {isEditable ? (
+                <>
+                  {["length", "width"].map((item) => {
+                    return (
+                      <TextInput
+                        id={item}
+                        key={item}
+                        value={dimensions[item]}
+                        className="w-2/5"
+                        required
+                        onChange={(e) => {
+                          setDimensions((dim) => {
+                            return {
+                              ...dim,
+                              [e.target.id]: e.target.value,
+                            };
+                          });
+                        }}
+                      />
+                    );
+                  })}
+                  <Select
+                    id="unit"
+                    className="1/5"
+                    onChange={(e) => {
+                      setUnit(e.target.value);
+                      if (unit === "ft" && e.target.value === "m") {
+                        setDimensions((dim) => {
+                          return {
+                            length: dim.length / 3.281,
+                            width: dim.width / 3.281,
+                          };
+                        });
+                      }
+                      if (unit === "m" && e.target.value === "ft") {
+                        setDimensions((dim) => {
+                          return {
+                            length: dim.length * 3.281,
+                            width: dim.width * 3.281,
+                          };
+                        });
+                      }
+                    }}
+                  >
+                    <option value="ft" selected={unit === "ft"}>
+                      ft (Feet)
+                    </option>
+                    <option value="m" selected={unit === "m"}>
+                      m (Meters)
+                    </option>
+                  </Select>
+                  {/* <TextInput
+                    id="unit"
+                    value={unit}
+                    className="w-1/2"
+                    required
+                    onChange={(e) => {
+                      setUnit(e.target.value);
+                    }}
+                  /> */}
+                </>
+              ) : (
+                <p className="w-3/4">
+                  {[
+                    ...["length", "width"].map((item) => {
+                      return dimensions[item] + unit;
+                    }),
+                  ].join(" x ")}
+                </p>
+              )}
+            </div>
             {details.map((detail) => {
               return (
                 <FormGroup
@@ -145,7 +303,7 @@ function SiteInformation() {
             })}
           </div>
           <p className="font-bold uppercase">Location Information</p>
-          <div className="grid grid-cols-2 grid-rows-4 grid-flow-col gap-4">
+          <div className="grid grid-cols-2 grid-rows-5 grid-flow-col gap-4">
             {location.map((detail) => {
               return (
                 <FormGroup
@@ -164,12 +322,20 @@ function SiteInformation() {
               name="coordinates"
               onChange={handleChange}
             />
-            {id && center ? (
+            <FormGroup
+              key={"ideal_view"}
+              isEditable={isEditable}
+              site={site}
+              item={"ideal_view"}
+              onChange={handleChange}
+            />
+            {id || center ? (
               <MapPicker
                 isEditable={isEditable}
                 center={center}
                 setCenter={setCenter}
                 onChange={setAddress}
+                handleMapChange={handleMapChange}
                 item={address}
               />
             ) : (
@@ -185,6 +351,37 @@ function SiteInformation() {
               />
             )}
           </div>
+          <div className="flex items-center  justify-end">
+            {!isEditable && (
+              <Button
+                as={Link}
+                type="submit"
+                to="./edit"
+                color="transparent"
+                className="text-white bg-yellow-300 hover:bg-yellow-500 rounded-md transition-all"
+                theme={mainButtonTheme}
+              >
+                Edit Site
+              </Button>
+            )}
+          </div>
+          {isEditable && (
+            <div className="flex gap-4 justify-end">
+              {id && (
+                <Button as={Link} type="button" to={`../${id}`} color="gray">
+                  Cancel
+                </Button>
+              )}
+              <Button
+                type="submit"
+                color="transparent"
+                className="text-white bg-secondary-500 hover:bg-secondary rounded-md transition-all"
+                theme={mainButtonTheme}
+              >
+                {id ? "Save Changes" : "Submit"}
+              </Button>
+            </div>
+          )}
         </form>
       </div>
     )
@@ -205,8 +402,17 @@ const FormGroup = ({ isEditable, site, item, onChange }) => {
           required
           onChange={onChange}
         />
+      ) : item === "ideal_view" ? (
+        <a
+          href={site[item]}
+          target="_blank"
+          rel="noreferrer"
+          className="p-2 w-full max-w-[500px] text-secondary underline"
+        >
+          {site[item]}
+        </a>
       ) : (
-        <p className="p-2 w-full">
+        <p className="p-2 w-3/4">
           {item !== "price"
             ? site[item]
             : Intl.NumberFormat("en-PH", {
@@ -223,9 +429,7 @@ const MultiFieldFormGroup = ({ isEditable, site, name, items, onChange }) => {
   const { capitalize } = useFunction();
   return (
     <div className="flex items-center gap-4">
-      <Label className="whitespace-nowrap w-1/4">
-        {capitalize(name, "_")} {name === "size" && "(in feet)"}
-      </Label>
+      <Label className="whitespace-nowrap w-1/4">{capitalize(name, "_")}</Label>
       {isEditable ? (
         items.map((item) => {
           return (
@@ -240,18 +444,12 @@ const MultiFieldFormGroup = ({ isEditable, site, name, items, onChange }) => {
           );
         })
       ) : (
-        <p className="p-2 w-full">
-          {name === "size"
-            ? [
-                ...items.map((item) => {
-                  return site[item] + "ft";
-                }),
-              ].join(" x ")
-            : [
-                ...items.map((item) => {
-                  return site[item];
-                }),
-              ].join(", ")}
+        <p className="w-3/4">
+          {[
+            ...items.map((item) => {
+              return site[item];
+            }),
+          ].join(", ")}
         </p>
       )}
     </div>

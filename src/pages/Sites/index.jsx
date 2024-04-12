@@ -1,28 +1,32 @@
-import { Table, Tooltip } from "flowbite-react";
+import { Button, Modal, Pagination, Table, Tooltip } from "flowbite-react";
 import { FaPen, FaTrash } from "react-icons/fa6";
-import { Link, Route, Routes } from "react-router-dom";
+import { Link, Route, Routes, useNavigate } from "react-router-dom";
 import { useServices } from "~/contexts/ServiceContext";
 import { useSites } from "~/contexts/SiteContext";
 import { useFunction } from "~/misc/functions";
 import Loader from "~components/Loader";
 import Title from "~components/Title";
 import SiteInformation from "./SiteInformation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { mainButtonTheme } from "~/misc/themes";
+import { HiOutlineExclamationCircle } from "react-icons/hi";
+import BatchUpload from "./BatchUpload";
 
 function Sites() {
   return (
     <>
-      <div className="w-full flex flex-col gap-2">
-        <Title>Sites Management</Title>
-        <div className="flex flex-col gap-4">
+      <div className="w-full flex flex-col gap-2 overflow-hidden">
+        <div className="flex flex-col gap-4 ">
           <Routes>
             <Route path="/*" element={<Main />} />
             <Route path="/:id" element={<SiteInformation />} />
             <Route path="/:id/edit" element={<SiteInformation />} />
             <Route path="/add" element={<SiteInformation />} />
+            <Route path="/batch-add" element={<BatchUpload />} />
           </Routes>
         </div>
       </div>
+      <SiteModals />
     </>
   );
 }
@@ -33,11 +37,47 @@ function Main() {
   const { tooltipOptions } = useServices();
   const headers = ["image", "name", "location", "price", "actions"];
 
+  const [sortedItems, setSortedItems] = useState(null);
+  const [itemCount, setCount] = useState(1);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+
+  // Calculate start and end index
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const onPageChange = (page) => setCurrentPage(page);
+
   useEffect(() => {
-    setSite(null);
-  }, []);
+    if (sites) {
+      let items = [...sites];
+      setCount(items.length);
+      items.sort((a, b) => a.site_id - b.site_id);
+      setSortedItems(items.reverse().slice(startIndex, endIndex));
+    }
+  }, [endIndex, setSite, sites, startIndex]);
   return (
     <>
+      <div className="flex gap-4 justify-between">
+        <Title>Sites Management</Title>
+        <Button
+          as={Link}
+          to="./add"
+          color="transparent"
+          className="text-white bg-secondary-500 hover:bg-secondary rounded-md transition-all ml-auto"
+          theme={mainButtonTheme}
+        >
+          Add Site
+        </Button>
+        <Button
+          as={Link}
+          to="./batch-add"
+          color="transparent"
+          className="text-white bg-secondary-500 hover:bg-secondary rounded-md transition-all"
+          theme={mainButtonTheme}
+        >
+          Batch Upload Site
+        </Button>
+      </div>
       <Table hoverable>
         <Table.Head>
           {headers.map((header, index) => (
@@ -47,8 +87,8 @@ function Main() {
           ))}
         </Table.Head>
         <Table.Body>
-          {sites && sites?.length !== 0 ? (
-            sites.map((site, index) => {
+          {sortedItems && sortedItems?.length !== 0 ? (
+            sortedItems.map((site, index) => {
               return (
                 <Table.Row key={index}>
                   <Table.Cell className="max-w-[200px]">
@@ -125,7 +165,71 @@ function Main() {
           )}
         </Table.Body>
       </Table>
+      {itemCount > itemsPerPage && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={Math.ceil(itemCount / itemsPerPage)}
+          onPageChange={onPageChange}
+        />
+      )}
     </>
+  );
+}
+function SiteModals() {
+  const { site, setSite, module, doReload, deleteSite } = useSites();
+  const { setAlert } = useServices();
+  const navigate = useNavigate();
+  const handleSiteDeletion = async () => {
+    console.log(site.site_id);
+    const response = await deleteSite(site.site_id);
+    console.log(response);
+    if (response?.success) {
+      setSite(null);
+      setAlert({
+        isOn: true,
+        type: "success",
+        message: "This site has been deleted.",
+      });
+      doReload((prevState) => (prevState += 1));
+      navigate("/sites");
+    } else {
+      setAlert({
+        isOn: true,
+        type: "failure",
+        message: `An error occurred. Please try again.`,
+      });
+    }
+  };
+
+  return (
+    <Modal
+      show={site !== null}
+      size="md"
+      popup
+      dismissible
+      onClose={() => setSite(null)}
+    >
+      <Modal.Header />
+      <Modal.Body>
+        <div className="text-center flex flex-col items-center gap-2 px-2">
+          <HiOutlineExclamationCircle className="h-14 w-14 text-gray-400 dark:text-gray-200" />
+          <h3 className="mb-3 text-main-500 text-center">
+            Are you sure you want to {module} this site?
+          </h3>
+          <div className="flex justify-center gap-4 w-full">
+            <Button
+              color={/deactivate|delete/.test(module) ? "failure" : "success"}
+              onClick={() => handleSiteDeletion()}
+            >
+              Yes, proceed
+            </Button>
+            <Button color="gray" onClick={() => setSite(null)}>
+              No, cancel
+            </Button>
+          </div>
+        </div>
+      </Modal.Body>
+    </Modal>
   );
 }
 

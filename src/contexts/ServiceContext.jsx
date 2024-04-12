@@ -18,6 +18,8 @@ export function ServiceProvider({ children }) {
     type: "info",
     message: "Sample only",
   });
+  const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState(0);
 
   // Array of conjunction words
   const conjunctionWords = [
@@ -122,9 +124,26 @@ export function ServiceProvider({ children }) {
     });
   }
 
+  function getInitials(str) {
+    if (!str) {
+      return "";
+    }
+
+    // Split the string into words
+    const words = str.split(" ");
+
+    // Get the first letter of each word and convert to uppercase
+    const initials = words.map((word) => word.charAt(0).toUpperCase());
+
+    // Join the initials together
+    return initials.join("");
+  }
+
   // Values to be provided by the context
   const values = {
     alert,
+    loading,
+    setLoading,
     setAlert,
     capitalize,
     split,
@@ -135,6 +154,9 @@ export function ServiceProvider({ children }) {
     sortItems,
     sortByStatus,
     sortByRole,
+    getInitials,
+    progress,
+    setProgress,
   };
 
   // Provide the values to the children components

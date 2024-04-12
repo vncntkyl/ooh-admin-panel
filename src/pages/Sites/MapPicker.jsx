@@ -4,7 +4,14 @@ import { APIProvider, AdvancedMarker, Map } from "@vis.gl/react-google-maps";
 import { Button, Label, TextInput } from "flowbite-react";
 import useGeocode from "~/contexts/UseGeocode";
 import { lightButtonTheme } from "~/misc/themes";
-function MapPicker({ isEditable, center, setCenter, onChange, item }) {
+function MapPicker({
+  isEditable,
+  center,
+  setCenter,
+  onChange,
+  item,
+  handleMapChange,
+}) {
   const zoom = 17;
   const [search, setSearch] = useState("");
   const [midpoint, setMidpoint] = useState(center);
@@ -64,7 +71,6 @@ function MapPicker({ isEditable, center, setCenter, onChange, item }) {
                 sizing="md"
                 className="w-full"
                 placeholder="search location"
-                required
               />
               <Button
                 theme={lightButtonTheme}
@@ -93,7 +99,13 @@ function MapPicker({ isEditable, center, setCenter, onChange, item }) {
               zoom={zoom}
               mapId={"b3f282d4d5ce8522"}
               onCenterChanged={(event) => {
-                isEditable && setCenter(event.detail.center);
+                if (isEditable) {
+                  setCenter(event.detail.center);
+                  handleMapChange(
+                    event.detail.center.lat,
+                    event.detail.center.lng
+                  );
+                }
               }}
               fullscreenControl={false}
               streetViewControl={false}
@@ -119,6 +131,7 @@ function LocationInfo({ isEditable, lat, lng, onChange, item }) {
     isEditable && (
       <TextInput
         id="location"
+        disabled
         type="text"
         sizing="md"
         onChange={(e) => onChange(e.target.value)}
@@ -131,7 +144,6 @@ function LocationInfo({ isEditable, lat, lng, onChange, item }) {
             ? "Error occured. Please try again"
             : "Enter location name"
         }
-        required
       />
     )
   );
