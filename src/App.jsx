@@ -15,6 +15,7 @@ import { UserProvider } from "~contexts/UserContext";
 import { ServiceProvider, useServices } from "~contexts/ServiceContext";
 import Sites from "~pages/Sites";
 import { SiteProvider } from "./contexts/SiteContext";
+import Loading from "~components/Loading";
 
 //Main App Component
 function App() {
@@ -46,6 +47,7 @@ function App() {
           <SiteProvider>
             <ServiceProvider>
               <Router>
+                <LoadingContainer />
                 <AlertContainer />
                 <Navbar />
                 <main className="flex flex-row gap-4 p-4">
@@ -61,6 +63,11 @@ function App() {
   );
 }
 
+function LoadingContainer() {
+  const { loading } = useServices();
+
+  return loading && <Loading />;
+}
 //component for rendering the routes of the system
 function AppRoutes() {
   //service function initialization
@@ -117,7 +124,7 @@ function AlertContainer() {
         icon={RiInformationFill}
         color={alert.type}
         onDismiss={() => setAlert(alertTemplate)}
-        className="absolute top-[10%] left-[50%] translate-x-[-50%] animate-fade-fr-t z-10"
+        className="fixed top-[10%] left-[50%] translate-x-[-50%] animate-fade-fr-t z-10"
       >
         <span>
           <p className="w-[300px] text-center">{alert.message}</p>
