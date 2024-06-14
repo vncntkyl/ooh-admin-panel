@@ -1,6 +1,7 @@
 /* eslint-disable react/prop-types */
 import { Button, FileInput, Label, Select, TextInput } from "flowbite-react";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { RiExternalLinkFill } from "react-icons/ri";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useSites } from "~/contexts/SiteContext";
 import { useFunction } from "~/misc/functions";
@@ -28,9 +29,10 @@ function SiteInformation() {
 
   const isEditable = /edit|add/.test(window.location.pathname);
   const details = ["segments", "type", "price", "board_facing"];
-  const location = ["area", "city", "region"];
+  const location = ["city", "region"];
 
   const handleChange = (e) => {
+    // console.log(e.target.id, e.target.value);
     setSite((prev) => ({
       ...prev,
       [e.target.id]: e.target.value,
@@ -104,9 +106,9 @@ function SiteInformation() {
     delete data.latitude;
     delete data.facing;
     delete data.access_type;
-    console.log(data);
+    // console.log(data);
     const response = await updateSite(data);
-    console.log(response);
+    // console.log(response);
 
     if (response?.success) {
       setAlert({
@@ -128,7 +130,6 @@ function SiteInformation() {
         let dimensions = response.size;
         let units = response.size;
         dimensions = dimensions.match(/\d+/g);
-        console.log(dimensions);
         setDimensions({
           length: dimensions[0],
           width: dimensions[1],
@@ -156,7 +157,6 @@ function SiteInformation() {
           facing: "",
           access_type: "public",
           imageURL: null,
-          area: "",
           city: "",
           region: "",
           latitude: "",
@@ -303,14 +303,14 @@ function SiteInformation() {
             })}
           </div>
           <p className="font-bold uppercase">Location Information</p>
-          <div className="grid grid-cols-2 grid-rows-5 grid-flow-col gap-4">
+          <div className="grid grid-cols-2 grid-rows-4 grid-flow-col gap-4">
             {location.map((detail) => {
               return (
-                <FormGroup
+                <SelectGroup
                   key={detail}
-                  isEditable={isEditable}
-                  site={site}
                   item={detail}
+                  site={site}
+                  isEditable={isEditable}
                   onChange={handleChange}
                 />
               );
@@ -407,9 +407,9 @@ const FormGroup = ({ isEditable, site, item, onChange }) => {
           href={site[item]}
           target="_blank"
           rel="noreferrer"
-          className="p-2 w-full max-w-[500px] text-secondary underline"
+          className="p-2 w-3/4 text-secondary underline flex items-center"
         >
-          {site[item]}
+          Visit Link <RiExternalLinkFill />
         </a>
       ) : (
         <p className="p-2 w-3/4">
@@ -425,6 +425,51 @@ const FormGroup = ({ isEditable, site, item, onChange }) => {
   );
 };
 
+const SelectGroup = ({ isEditable, site, item, onChange }) => {
+  const { regionList: region } = useFunction();
+  const { cities: city } = useSites();
+  const options = {
+    city: city,
+    region: region,
+  };
+  return (
+    <div className="flex items-center gap-2">
+      <Label htmlFor={item} className="whitespace-nowrap w-1/4 capitalize">
+        {item}
+      </Label>
+      {isEditable ? (
+        // <TextInput
+        //   id={detail}
+        //   value={site[detail]}
+        //   className="w-full"
+        //   required
+        //   onChange={handleChange}
+        // />
+        <Select id={item} className="w-full" onChange={onChange}>
+          <option
+            disabled
+            className="capitalize"
+            selected={site[item] === ""}
+          >{`Select ${item}`}</option>
+          {options[item].map((opt) => {
+            return (
+              <option
+                key={opt}
+                value={opt}
+                selected={site[item] === opt}
+                className="capitalize"
+              >
+                {opt}
+              </option>
+            );
+          })}
+        </Select>
+      ) : (
+        <p className="p-2 w-3/4">{site[item]}</p>
+      )}
+    </div>
+  );
+};
 const MultiFieldFormGroup = ({ isEditable, site, name, items, onChange }) => {
   const { capitalize } = useFunction();
   return (

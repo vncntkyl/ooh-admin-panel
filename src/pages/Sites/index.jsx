@@ -11,6 +11,7 @@ import { useEffect, useState } from "react";
 import { mainButtonTheme } from "~/misc/themes";
 import { HiOutlineExclamationCircle } from "react-icons/hi";
 import BatchUpload from "./BatchUpload";
+import SiteOptions from "./SiteOptions";
 
 function Sites() {
   return (
@@ -35,12 +36,12 @@ function Main() {
   const { results: sites, setSite, setModule } = useSites();
   const { capitalize } = useFunction();
   const { tooltipOptions } = useServices();
-  const headers = ["image", "name", "location", "price", "actions"];
+  const headers = ["image", "name", "location", "price"];
 
   const [sortedItems, setSortedItems] = useState(null);
   const [itemCount, setCount] = useState(1);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5;
+  const itemsPerPage = 10;
 
   // Calculate start and end index
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -57,27 +58,8 @@ function Main() {
   }, [endIndex, setSite, sites, startIndex]);
   return (
     <>
-      <div className="flex gap-4 justify-between">
-        <Title>Sites Management</Title>
-        <Button
-          as={Link}
-          to="./add"
-          color="transparent"
-          className="text-white bg-secondary-500 hover:bg-secondary rounded-md transition-all ml-auto"
-          theme={mainButtonTheme}
-        >
-          Add Site
-        </Button>
-        <Button
-          as={Link}
-          to="./batch-add"
-          color="transparent"
-          className="text-white bg-secondary-500 hover:bg-secondary rounded-md transition-all"
-          theme={mainButtonTheme}
-        >
-          Batch Upload Site
-        </Button>
-      </div>
+      <Title>Sites Management</Title>
+      <SiteOptions />
       <Table hoverable>
         <Table.Head>
           {headers.map((header, index) => (
@@ -85,13 +67,14 @@ function Main() {
               {capitalize(header, "_")}
             </Table.HeadCell>
           ))}
+          <Table.HeadCell className="text-main-300" align="center">Actions</Table.HeadCell>
         </Table.Head>
         <Table.Body>
           {sortedItems && sortedItems?.length !== 0 ? (
             sortedItems.map((site, index) => {
               return (
                 <Table.Row key={index}>
-                  <Table.Cell className="max-w-[200px]">
+                  <Table.Cell className="w-[300px]">
                     {site.imageURL ? (
                       <img
                         src={site.imageURL}
@@ -106,10 +89,6 @@ function Main() {
                     <Link to={`./${site.site_code}`}>{site.site}</Link>
                   </Table.Cell>
                   <Table.Cell className="text-xs">
-                    <p>
-                      <span>Area: </span>
-                      <span>{site.area}</span>
-                    </p>
                     <p>
                       <span>City: </span>
                       <span>{site.city}</span>

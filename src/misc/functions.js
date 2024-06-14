@@ -1,3 +1,5 @@
+import geofence_list from "./geofence_list.json";
+
 const conjunctionWords = [
   "and",
   "but",
@@ -237,9 +239,11 @@ const headers = [
 const locationMap = {
   "Kalakhang Maynila": "Metro Manila",
   "Gitnáng Luzon": "Central Luzon",
+  Isabela: "Cagayan Valley",
   "Lungsod Quezon": "Quezon City",
   "Hilagang Mindanao": "Northern Mindanao",
   "Rehiyong Pampangasiwaan ng Cordillera": "Cordillera Administrative Region",
+  SOCCSKSARGEN: "Region XII",
 };
 const batchUploadHeaders = [
   { name: "city", options: cities },
@@ -320,10 +324,77 @@ function searchItems(array, query) {
 
   return matches;
 }
+function findClosestLocations(givenCoord) {
+  const locations = geofence_list;
+  // Calculate distance between two lat/lng points using the Haversine formula
+  function calculateDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371; // Radius of the earth in km
+    const dLat = deg2rad(lat2 - lat1);
+    const dLon = deg2rad(lon2 - lon1);
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(deg2rad(lat1)) *
+        Math.cos(deg2rad(lat2)) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const d = R * c; // Distance in km
+    return d;
+  }
+
+  function deg2rad(deg) {
+    return deg * (Math.PI / 180);
+  }
+
+  // Calculate distances and add them to each location object
+  locations.forEach((location) => {
+    const NB_distance = calculateDistance(
+      location.nb_lat,
+      location.nb_long,
+      givenCoord.lat,
+      givenCoord.lng
+    );
+    const SB_distance = calculateDistance(
+      location.sb_lat,
+      location.sb_long,
+      givenCoord.lat,
+      givenCoord.lng
+    );
+    // Taking the minimum of the two distances for each location
+    location.distance = Math.min(NB_distance, SB_distance);
+  });
+
+  // Sort locations by distance
+  locations.sort((a, b) => a.distance - b.distance);
+
+  // Return the top two closest locations
+  return locations.slice(0, 2);
+}
+
+const retrieveIdealViewCoordinates = (link) => {
+  //https://www.google.com/maps/@14.624232,121.0744222,3a,75y,354.06h,92.22t/data=!3m6!1e1!3m4!1s69Lv8YYzi_Y0B1BfBw0zYA!2e0!7i16384!8i8192?entry=ttu
+  const isGoogleLink = /google.*maps/.test(link);
+  const latlngRegex = /@([-+]?\d+\.\d+),([-+]?\d+\.\d+)/;
+
+  if (!isGoogleLink) return;
+
+  const latlngResults = link.match(latlngRegex);
+
+  if (!latlngResults || latlngResults?.length < 3) return;
+
+  const latitude = parseFloat(latlngResults[1]);
+  const longitude = parseFloat(latlngResults[2]);
+
+  return {
+    lat: latitude,
+    lng: longitude,
+  };
+};
 export const useFunction = () => {
   return {
     colors,
     regions,
+    regionList,
     cities,
     headers,
     locationMap,
@@ -334,5 +405,7 @@ export const useFunction = () => {
     toSentenceCase,
     offsetCoordinate,
     searchItems,
+    findClosestLocations,
+    retrieveIdealViewCoordinates,
   };
 };

@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useState } from "react";
 import PropTypes from "prop-types";
-import useSearch from "~/hooks/useSearch";
+import useSearch from "~/hooks/useSearchWithNumerals";
 import { endpoints, headers } from "./endpoints";
 import axios from "axios";
 
@@ -12,6 +12,7 @@ export function useSites() {
 
 export function SiteProvider({ children }) {
   const [sites, setSites] = useState();
+  const [cities, setCities] = useState([]);
   const [site, setSite] = useState(null);
   const [module, setModule] = useState("");
   const { searchTerm, results } = useSearch(sites);
@@ -51,11 +52,19 @@ export function SiteProvider({ children }) {
     }
   };
   const insertMultipleSites = async (data) => {
-    const mappedData = data.map((item) => Object.values(item));
+    const mappedData = data
+      .map((item) => {
+        const { size_height, size_unit, size_width, ...rest } = item;
+
+        return rest;
+      })
+      .map((item) => Object.values(item));
+
     // console.log(mappedData);
     // const response = {
     //   data: { success: true },
     // };
+    // return response.data
     try {
       const response = await axios.post(endpoints.batch, mappedData, {
         ...headers,
@@ -137,6 +146,7 @@ export function SiteProvider({ children }) {
 
   const values = {
     site,
+    cities,
     sites,
     results,
     module,
@@ -160,6 +170,7 @@ export function SiteProvider({ children }) {
     const setup = async () => {
       const response = await retrieveSites();
       setSites(response);
+      setCities([...new Set(response.map((site) => site.city))]);
     };
     setup();
   }, [reload]);

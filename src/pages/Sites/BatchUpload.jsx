@@ -9,7 +9,7 @@ import {
 } from "flowbite-react";
 import template from "../../assets/template.xlsx";
 import Title from "~components/Title";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import * as XLSX from "xlsx";
 import { FaArrowsRotate, FaTrash } from "react-icons/fa6";
 import PropTypes from "prop-types";
@@ -74,9 +74,14 @@ function BatchUpload() {
 
       // Create the new code for this item
       const newCode = `${siteOwnerInitial}${lastIndex}`;
+      item.type = item.type.toLowerCase();
 
       return {
         site_code: newCode,
+        site: newCode,
+        area: item.area,
+        city: item.city,
+        region: item.region,
         ...item,
         size: `${item.size_width}${item.size_unit} x ${item.size_height}${item.size_unit}`,
         imageURL:
@@ -86,7 +91,9 @@ function BatchUpload() {
     toggleUpload(false);
     setLoading(true);
 
+    // console.log(uploadData);
     const response = await insertMultipleSites(uploadData);
+    // console.log(response);
     if (response?.success) {
       setLoading(false);
       setAlert({
@@ -129,12 +136,13 @@ function BatchUpload() {
                     template attached
                   </a>{" "}
                   and fill in all required details. Ensure no cells are left
-                  empty. 
+                  empty.
                 </li>
                 <li>Upload the completed file below.</li>
                 <li>
-                  NOTE: The system only accepts up to <strong>100 rows</strong>. For the ideal view, please enter the google maps street
-                  view link.
+                  NOTE: The system only accepts up to <strong>100 rows</strong>.
+                  For the ideal view, please enter the google maps street view
+                  link.
                 </li>
                 <li>
                   Once uploaded, thoroughly review for any errors before saving.
@@ -447,7 +455,12 @@ function DataTable({ data, setData, setId }) {
 
 function FileUpload({ setData }) {
   const { getAddressInformation } = useSites();
-  const { batchUploadHeaders, locationMap } = useFunction();
+  const {
+    batchUploadHeaders,
+    locationMap,
+    findClosestLocations,
+    retrieveIdealViewCoordinates,
+  } = useFunction();
   const [file, setFile] = useState(null);
   const { setLoading, setProgress, setAlert } = useServices();
   const handleFileChange = async (e) => {
@@ -456,13 +469,13 @@ function FileUpload({ setData }) {
     reader.onload = async (event) => {
       const data = event.target.result;
       const processedData = processExcelData(data);
-      
+
       if (processedData.length > 100) {
         setAlert({
           isOn: true,
           type: "failure",
           message:
-          "File uploaded exceeded the row limit of 100. Please adjust your file.",
+            "File uploaded exceeded the row limit of 100. Please adjust your file.",
         });
         // setFile(null);
         return;
@@ -496,10 +509,23 @@ function FileUpload({ setData }) {
               batchUploadHeaders[0].options.push(city.long_name);
             }
           }
+
+          const latLng = retrieveIdealViewCoordinates(item.ideal_view);
+          const areas = findClosestLocations(latLng);
+          let area_code;
+          if (areas) {
+            area_code = areas.map(({ ID }) => ID);
+            area_code = area_code.join("_");
+          } else {
+            area_code = "N-A";
+          }
+
+          // console.log(area_code);
           return {
             ...item,
             // city: city,
             // region: address.region,
+            area: area_code,
             city: locationMap[city.long_name]
               ? locationMap[city.long_name]
               : city.long_name,
@@ -517,7 +543,8 @@ function FileUpload({ setData }) {
         const item = processedData[i];
         // sitesData.push(item);
         const processedItem = await processItem(item);
-        console.log(processedItem);
+        // console.log(processedItem);
+
         sitesData.push(processedItem);
         const progress = ((i + 1) / processedData.length) * 100;
         // console.log(progress);
